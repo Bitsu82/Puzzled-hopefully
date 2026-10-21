@@ -18,6 +18,7 @@ CAT_COLOR = (220, 60, 60)        # Killer cat hazard color (Red/Dangerous)
 
 current_level = 1
 platforms = []
+boxes = []
 cats = []
 foods = []
 
@@ -56,9 +57,16 @@ class Food(Platform):
     def __init__(self, x, y, width=30, height=30):
         super().__init__(x, y, width, height, color=(50, 220, 100))
 
+class Box(Platform):
+    def __init__(self, x, y, width=40, height=40):
+        super().__init__(x, y, width, height, color=(160, 100, 50))
+        self.vel_y = 0
+
+
+
 
 def load_level(level_num):
-    global current_level, platforms, cats, foods, player_x, player_y
+    global current_level, platforms,boxes, cats, foods, player_x, player_y
     current_level = level_num
     
     if level_num == 1:
@@ -69,6 +77,7 @@ def load_level(level_num):
         ]
         cats = [Cat(300, 510, 40, 40)]
         foods = [Food(500, 290)]
+        boxes = []
         player_x, player_y = 100, 400
         
     elif level_num == 2:
@@ -79,21 +88,11 @@ def load_level(level_num):
         ]
         cats = [Cat(250, 510, 40, 40), Cat(550, 240, 40, 40)]
         foods = [Food(570, 240)] 
-        player_x, player_y = 300, 400
+        boxes = [Box(300, 500)]
+        player_x, player_y = 250, 400
         
 # Call Level 1 to start the game
 load_level(1)
-
-
-# Set up level items
-platforms = [
-    Platform(0, 550, 800, 50),   # Ground floor
-    Platform(150, 430, 200, 20), # Platform 1
-    Platform(450, 330, 200, 20), # Platform 2
-]
-cats = [
-    Cat(300, 510, 40, 40) 
-]
 
 # Main Game Loop
 running = True
@@ -150,6 +149,26 @@ while running:
             elif player_vel_x < 0:  # Moving left into a platform wall
                 player_x = p.rect.right
 
+    for b in boxes:
+        # Apply gravity to the box so it falls to the ground
+        b.vel_y += gravity
+        b.rect.y += b.vel_y
+
+        # Box vertical collision with platforms
+        for p in platforms:
+            if b.rect.colliderect(p.rect):
+                if b.vel_y > 0:
+                    b.rect.bottom = p.rect.top
+                    b.vel_y = 0
+    # Push box horizontally when player walks into it
+            if player_rect.colliderect(b.rect):
+                if player_vel_x > 0:  # Pushing right
+                    b.rect.x += player_vel_x
+                    player_x = b.rect.left - player_width
+                elif player_vel_x < 0:  # Pushing left
+                    b.rect.x += player_vel_x
+                    player_x = b.rect.right
+
     # Update hitbox again after wall collision
     player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
 
@@ -178,6 +197,8 @@ while running:
         c.draw(screen)
     for f in foods:
         f.draw(screen)
+    for b in boxes:
+        b.draw(screen)
 
     # Draw the player (Yellow Crow block)
     pygame.draw.rect(screen, PLAYER_COLOR, (player_x, player_y, player_width, player_height))
