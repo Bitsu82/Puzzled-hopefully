@@ -16,6 +16,11 @@ PLAYER_COLOR = (240, 200, 50)    # Crow yellow color
 PLATFORM_COLOR = (100, 110, 130) # Metallic platform color
 CAT_COLOR = (220, 60, 60)        # Killer cat hazard color (Red/Dangerous)
 
+current_level = 1
+platforms = []
+cats = []
+foods = []
+
 # Player Variables 
 player_x = 100
 player_y = 400
@@ -33,6 +38,8 @@ is_jumping = False
 clock = pygame.time.Clock()
 FPS = 60
 
+
+
 class Platform:
     def __init__(self, x, y, width, height, color = PLATFORM_COLOR):
         self.rect = pygame.Rect(x, y, width, height)
@@ -44,6 +51,39 @@ class Platform:
 class Cat(Platform):
     def __init__ (self, x, y, width, height):
         super().__init__(x, y, width, height, color = CAT_COLOR)
+
+class Food(Platform):
+    def __init__(self, x, y, width=30, height=30):
+        super().__init__(x, y, width, height, color=(50, 220, 100))
+
+
+def load_level(level_num):
+    global current_level, platforms, cats, foods, player_x, player_y
+    current_level = level_num
+    
+    if level_num == 1:
+        platforms = [
+            Platform(0, 550, 800, 50),   # Ground floor
+            Platform(150, 430, 200, 20), # Platform 1
+            Platform(450, 330, 200, 20), # Platform 2
+        ]
+        cats = [Cat(300, 510, 40, 40)]
+        foods = [Food(500, 290)]
+        player_x, player_y = 100, 400
+        
+    elif level_num == 2:
+        platforms = [
+            Platform(0, 550, 800, 50),   # Ground floor
+            Platform(200, 400, 150, 20), # Level 2 Platform A
+            Platform(500, 280, 150, 20), # Level 2 Platform B
+        ]
+        cats = [Cat(250, 510, 40, 40), Cat(550, 240, 40, 40)]
+        foods = [Food(570, 240)] 
+        player_x, player_y = 300, 400
+        
+# Call Level 1 to start the game
+load_level(1)
+
 
 # Set up level items
 platforms = [
@@ -117,9 +157,14 @@ while running:
     for c in cats:
         if player_rect.colliderect(c.rect):
             # If you touch killer cats, reset position
-            player_x = 100
-            player_y = 400
+            load_level(current_level)
             player_vel_y = 0
+
+    for f in foods[:]:
+        if player_rect.colliderect(f.rect):
+            foods.remove(f)
+            # This automatically loads the next level
+            load_level(current_level + 1)
 
 
 
@@ -131,6 +176,8 @@ while running:
         p.draw(screen)
     for c in cats:
         c.draw(screen)
+    for f in foods:
+        f.draw(screen)
 
     # Draw the player (Yellow Crow block)
     pygame.draw.rect(screen, PLAYER_COLOR, (player_x, player_y, player_width, player_height))
