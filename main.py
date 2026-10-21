@@ -21,6 +21,8 @@ platforms = []
 boxes = []
 cats = []
 foods = []
+buttons = []
+doors = []
 
 # Player Variables 
 player_x = 100
@@ -30,7 +32,7 @@ player_height = 40
 player_vel_x = 0
 player_vel_y = 0
 player_speed = 5
-player_jump_force = -12
+player_jump_force = -13.5
 gravity = 0.5
 friction = 0.85  
 is_jumping = False
@@ -62,11 +64,16 @@ class Box(Platform):
         super().__init__(x, y, width, height, color=(160, 100, 50))
         self.vel_y = 0
 
+class Button(Platform):
+    def __init__(self, x, y):
+        super().__init__(x, y, 30, 15, color=(255, 220, 0)) # Gold pressure plate
 
-
+class Door(Platform):
+    def __init__(self, x, y, width, height):
+        super().__init__(x, y, width, height, color=(80, 160, 220)) # Blue barrier door
 
 def load_level(level_num):
-    global current_level, platforms,boxes, cats, foods, player_x, player_y
+    global current_level, platforms,boxes, cats, foods, buttons, doors, player_x, player_y
     current_level = level_num
     
     if level_num == 1:
@@ -78,6 +85,8 @@ def load_level(level_num):
         cats = [Cat(300, 510, 40, 40)]
         foods = [Food(500, 290)]
         boxes = []
+        buttons = []
+        doors = []
         player_x, player_y = 100, 400
         
     elif level_num == 2:
@@ -89,7 +98,24 @@ def load_level(level_num):
         cats = [Cat(250, 510, 40, 40), Cat(550, 240, 40, 40)]
         foods = [Food(570, 240)] 
         boxes = [Box(300, 500)]
+        buttons = []
+        doors = []
         player_x, player_y = 250, 400
+
+    elif level_num == 3:
+
+        platforms = [
+            Platform(0, 550, 800, 50),   # Ground
+            Platform(500, 400, 200, 20), # High ledge holding food
+        ]
+        cats = []
+        foods = [Food(600, 350)]         # Food behind the door
+        boxes = []
+        buttons = [Button(200, 530)]     # Button on the ground
+        doors = [Door(500, 350, 20, 70)] # Door blocking access to the ledge
+        player_x, player_y = 500, 500
+
+
         
 # Call Level 1 to start the game
 load_level(1)
@@ -121,7 +147,7 @@ while running:
 # Create a temporary (recreated every frame) hitbox for player collision checking (Y-axis)
     player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
     #vertical collision
-    for p in platforms:
+    for p in platforms + doors:
         if player_rect.colliderect(p.rect):
             if player_vel_y > 0:  # Falling down onto a platform
                 player_y = p.rect.top - player_height
@@ -142,7 +168,7 @@ while running:
     # Recreate hitbox for horizontal wall checks
     player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
 
-    for p in platforms:
+    for p in platforms + doors:
         if player_rect.colliderect(p.rect):
             if player_vel_x > 0:  # Moving right into a platform wall
                 player_x = p.rect.left - player_width
@@ -155,7 +181,7 @@ while running:
         b.rect.y += b.vel_y
 
         # Box vertical collision with platforms
-        for p in platforms:
+        for p in platforms + doors:
             if b.rect.colliderect(p.rect):
                 if b.vel_y > 0:
                     b.rect.bottom = p.rect.top
@@ -171,6 +197,18 @@ while running:
 
     # Update hitbox again after wall collision
     player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+
+    button_pressed = False
+    for btn in buttons:
+        if player_rect.colliderect(btn.rect):
+            button_pressed = True
+        for b in boxes:
+            if b.rect.colliderect(btn.rect):
+                button_pressed = True
+                
+    if button_pressed:
+        doors = [] # Erase the door from existence
+
 
     #collision of cat vertical or horizontal
     for c in cats:
@@ -193,12 +231,17 @@ while running:
     # Draw Platforms and Cats
     for p in platforms:
         p.draw(screen)
-    for c in cats:
-        c.draw(screen)
-    for f in foods:
-        f.draw(screen)
+    for d in doors:
+        d.draw(screen)
+    for btn in buttons:
+        btn.draw(screen)        
     for b in boxes:
         b.draw(screen)
+    for f in foods:
+        f.draw(screen) 
+    for c in cats:
+        c.draw(screen)
+
 
     # Draw the player (Yellow Crow block)
     pygame.draw.rect(screen, PLAYER_COLOR, (player_x, player_y, player_width, player_height))
@@ -211,8 +254,3 @@ pygame.quit()
 sys.exit()
     
     
-
-
-
-
-
